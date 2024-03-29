@@ -46,8 +46,8 @@ def classes():
     results = BQ_CLIENT.query(
     '''
         Select Description, COUNT(*) AS NumImages
-        FROM `bdcc24project.openimages.image_labels`
-        JOIN `bdcc24project.openimages.classes` USING(Label)
+        FROM `vertex_dataset.image_labels`
+        JOIN `vertex_dataset.classes` USING(Label)
         GROUP BY Description
         ORDER BY Description
     ''').result()
@@ -57,8 +57,14 @@ def classes():
 
 @app.route('/relations')
 def relations():
-    # TODO
-    return flask.render_template('not_implemented.html')
+    results = BQ_CLIENT.query(
+    '''
+        Select cast(Label1 as INT64), cast(Label2 as INT64)
+        FROM `vertex_dataset.relations`
+    ''').result()
+    logging.info('relations: results={}'.format(results.total_rows))
+    data = dict(results=results)
+    return flask.render_template('Relations.html', data=data)
 
 
 
