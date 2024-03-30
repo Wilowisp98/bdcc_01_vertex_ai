@@ -36,6 +36,14 @@ TF_CLASSIFIER = tfmodel.Model(
 )
 logging.info('Initialisation complete')
 
+# Run queries and return the result as a dataframe
+def run_query(query: str):
+    results = BQ_CLIENT.query(query).result()
+    results = results.to_dataframe()
+    results = results.drop(index=0)
+    results.reset_index(inplace=True, drop=True)
+    return results
+
 # End-point implementation
 @app.route('/')
 def index():
@@ -57,13 +65,12 @@ def classes():
 
 @app.route('/relations')
 def relations():
-    results = BQ_CLIENT.query(
-    '''
-        Select cast(Label1 as INT64), cast(Label2 as INT64)
+    query = '''
+        Select Label1, Label1
         FROM `vertex_dataset.relations`
-    ''').result()
-    logging.info('relations: results={}'.format(results.total_rows))
-    data = dict(results=results)
+    '''
+    query_result = run_query(query)
+    logging.info('relations: results={}'.format(query_result.total_rows))
     return flask.render_template('Relations.html', data=data)
 
 

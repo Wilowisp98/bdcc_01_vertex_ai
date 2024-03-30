@@ -32,6 +32,7 @@ def create_bq(files):
     # Iterating over the files and creating the respective tables
     for file, file_path in files.items():
         table_ref = vertex_dataset.table(file)
+        # Possible improvement
         # Deleting the table if it already exists (not needed bc the dataset is deleted, but might be an improvement)
         #try:
         #    client.get_table(table_ref)
@@ -46,14 +47,18 @@ def create_bq(files):
         job_config.schema = [
             bigquery.SchemaField(f'{column_name}', 'STRING') for column_name in columns
         ]
-        print(job_config.schema)
         job_config.source_format = bigquery.SourceFormat.CSV
-        print(job_config.source_format)
         # Loading the data from the file to the table
         with open(file_path, "rb") as source_file:
             job = client.load_table_from_file(source_file, table_ref, job_config=job_config)
         job.result()
         print(f"Table {file} created successfully")
+        # Debug 
+        #results = client.query(f'SELECT * FROM {table_ref.dataset_id}.{table_ref.table_id} LIMIT 10').result()
+        #df = results.to_dataframe()
+        #df = df.drop(index=0)
+        #df.reset_index(inplace=True, drop=True)
+        #print(df)
 
 def main():
     files = get_files()
