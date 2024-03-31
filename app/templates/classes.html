@@ -10,7 +10,7 @@
         <th>Description</th>
         <th>Image count</th>
     </tr>
-    {% for result in data.results %}
+    {% for result in results %}
     <tr>
         <td>
             <a href="/image_search?description={{ result[0] }}">{{ result[0] }}</a>

@@ -1,0 +1,20 @@
+{% extends 'general-template.html'  %}
+{% block content %}
+
+<body>
+
+<h1>Relations</h1>
+
+<table>
+    <tr>
+        <th>Relation Type</th>
+        <th>Image Count</th>
+    </tr>
+    {% for result in results %}
+    
+        <tr><td><a href="/relation_search??class1=%25&relation={{ result[0] }}&class2=%25&image_limit=10"">{{ result[0] }}</a></td>
+        <td>{{ result[1] }}</td></tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

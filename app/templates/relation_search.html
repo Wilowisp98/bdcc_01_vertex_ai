@@ -1,0 +1,22 @@
+{% extends 'general-template.html'  %}
+{% block content %}
+
+<body>
+<h1>{% if class1|length > 1 %}{{ class1 }} {% endif %}<b>{{ relation }}</b>{% if class2|length > 1 %} {{ class2 }}{% endif %}</h1>
+
+{% for result in results %}
+
+        <h2>{{ result[0] }}</h2>
+        <h4>{{ result[1] }} {{ result[2] }} {{ result[3] }}</h4>
+
+                <a href="https://storage.googleapis.com/bdcc_open_images_dataset/images/{{ result[0] }}.jpg">
+                        <img width="600" src="https://storage.googleapis.com/bdcc_open_images_dataset/images/{{ result[0] }}.jpg"/>
+                </a>
+
+        <br/>
+
+{% endfor %}
+
+{% endblock %}
+
+

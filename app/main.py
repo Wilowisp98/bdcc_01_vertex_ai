@@ -11,11 +11,13 @@ from google.cloud import bigquery
 from google.cloud import storage
 
 # Set up logging
-logging.basicConfig(level=logging.INFO,
-                     format='%(asctime)s - %(levelname)s - %(message)s',
-                     datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
-PROJECT = os.environ.get('GOOGLE_CLOUD_PROJECT') 
+PROJECT = os.environ.get('GOOGLE_CLOUD_PROJECT', 'project01-418209') 
 logging.info('Google Cloud project is {}'.format(PROJECT))
 
 # Initialisation
@@ -23,11 +25,11 @@ logging.info('Initialising app')
 app = flask.Flask(__name__)
 
 logging.info('Initialising BigQuery client')
-BQ_CLIENT = bigquery.Client()
+BQ_CLIENT = bigquery.Client(project=PROJECT)
 
 BUCKET_NAME = PROJECT + '.appspot.com'
 logging.info('Initialising access to storage bucket {}'.format(BUCKET_NAME))
-APP_BUCKET = storage.Client().bucket(BUCKET_NAME)
+APP_BUCKET = storage.Client(project=PROJECT).bucket(BUCKET_NAME)
 
 logging.info('Initialising TensorFlow classifier')
 TF_CLASSIFIER = tfmodel.Model(
@@ -38,11 +40,15 @@ logging.info('Initialisation complete')
 
 # Run queries and return the result as a dataframe
 def run_query(query: str):
+    query = query.format(project_id=PROJECT) if '{project_id}' in query else query
     results = BQ_CLIENT.query(query).result()
-    results = results.to_dataframe()
-    results = results.drop(index=0)
-    results.reset_index(inplace=True, drop=True)
-    return results
+    logging.info('classes: results={}'.format(results.total_rows))
+    df = results.to_dataframe()
+    df.reset_index(inplace=True, drop=True)
+    return df
+
+def to_flask_render_template(df):
+    return df.to_numpy().tolist()
 
 # End-point implementation
 @app.route('/')
@@ -51,28 +57,26 @@ def index():
 
 @app.route('/classes')
 def classes():
-    results = BQ_CLIENT.query(
-    '''
+    query = '''
         Select Description, COUNT(*) AS NumImages
-        FROM `vertex_dataset.image_labels`
-        JOIN `vertex_dataset.classes` USING(Label)
+        FROM `{project_id}.vertex_dataset.image_labels`
+        JOIN `{project_id}.vertex_dataset.classes` USING(Label)
         GROUP BY Description
         ORDER BY Description
-    ''').result()
-    logging.info('classes: results={}'.format(results.total_rows))
-    data = dict(results=results)
-    return flask.render_template('classes.html', data=data)
+    '''
+    results_df = run_query(query)
+    return flask.render_template('classes.html', results=to_flask_render_template(results_df))
 
 @app.route('/relations')
 def relations():
     query = '''
-        Select Label1, Label1
-        FROM `vertex_dataset.relations`
+        Select relation, COUNT(ImageId) AS NumImages
+        FROM `{project_id}.vertex_dataset.relations`
+        GROUP BY relation
+        ORDER BY relation
     '''
-    query_result = run_query(query)
-    logging.info('relations: results={}'.format(query_result.total_rows))
-    return flask.render_template('Relations.html', data=data)
-
+    results_df = run_query(query)
+    return flask.render_template('relations.html', results=to_flask_render_template(results_df))
 
 
 @app.route('/image_info')
@@ -85,8 +89,17 @@ def image_info():
 def image_search():
     description = flask.request.args.get('description', default='')
     image_limit = flask.request.args.get('image_limit', default=10, type=int)
-    # TODO
-    return flask.render_template('not_implemented.html')
+    results_df = run_query(
+        '''
+        Select ImageId
+        FROM `{project_id}.vertex_dataset.image_labels`
+        INNER JOIN `{project_id}.vertex_dataset.classes` USING (Label)
+        WHERE LOWER(description) LIKE '%{desc}%'
+        LIMIT {image_limit}
+        '''.format(project_id=PROJECT, desc=description.lower(), image_limit=image_limit)
+    )
+    return flask.render_template('image_search.html', description=description, results=results_df['ImageId'].to_list())
+
 
 @app.route('/relation_search')
 def relation_search():
@@ -94,8 +107,20 @@ def relation_search():
     relation = flask.request.args.get('relation', default='%')
     class2 = flask.request.args.get('class2', default='%')
     image_limit = flask.request.args.get('image_limit', default=10, type=int)
-    # TODO
-    return flask.render_template('not_implemented.html')
+
+    results_df = run_query(
+        '''
+        SELECT ImageId, c1.description desc1, relation, c2.description desc2
+        FROM `{project_id}.vertex_dataset.relations`
+        INNER JOIN `vertex_dataset.classes` c1 ON c1.label = Label1
+        INNER JOIN `vertex_dataset.classes` c2 ON c2.label = Label2
+        WHERE LOWER(relation) LIKE '%{relation}%'
+            AND LOWER(c1.description) LIKE '%{class1}%'
+            AND LOWER(c2.description) LIKE '%{class2}%'
+        LIMIT {image_limit}
+        '''.format(project_id=PROJECT, relation=relation.lower(), image_limit=image_limit, class1=class1.lower(), class2=class2.lower())
+    )
+    return flask.render_template('relation_search.html', class1=class1, relation=relation, class2=class2, results=to_flask_render_template(results_df))
 
 
 @app.route('/image_classify_classes')
