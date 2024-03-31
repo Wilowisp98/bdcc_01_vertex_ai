@@ -55,6 +55,7 @@ def to_flask_render_template(df):
 def index():
     return flask.render_template('index.html')
 
+
 @app.route('/classes')
 def classes():
     query = '''
@@ -62,10 +63,11 @@ def classes():
         FROM `{project_id}.vertex_dataset.image_labels`
         JOIN `{project_id}.vertex_dataset.classes` USING(Label)
         GROUP BY Description
-        ORDER BY Description
+        ORDER BY NumImages DESC
     '''
     results_df = run_query(query)
     return flask.render_template('classes.html', results=to_flask_render_template(results_df))
+
 
 @app.route('/relations')
 def relations():
@@ -84,6 +86,7 @@ def image_info():
     image_id = flask.request.args.get('image_id')
     # TODO
     return flask.render_template('not_implemented.html')
+
 
 @app.route('/image_search')
 def image_search():
