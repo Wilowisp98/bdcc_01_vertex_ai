@@ -4,5 +4,4 @@ Flask
 tensorflow==2.16.1
 Pillow==9.1.0
 pandas
-db-types
-os
+db-dtypes
