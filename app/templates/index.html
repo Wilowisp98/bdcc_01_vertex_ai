@@ -74,7 +74,7 @@
             </form>
         </td>
     </tr>
-    <!--
+
     <tr>
         <td>
             <tt>/image_search_multiple</tt>
@@ -104,7 +104,6 @@
             </form>
         </td>
     </tr>
-    -->
     <tr>
         <td>
             <tt>/relation_search</tt>
@@ -164,11 +163,18 @@
                 <br/>
 	            <label>Minimum confidence: </label>
                 <input 
-                type="range" min="0.05" max="1" step="0.05" value="0.05"
-                name="min_confidence"
-                onChange="document.getElementById('min_confidence_value').innerHTML = this.value"
+                    type="range" min="0.05" max="1" step="0.05" value="0.05"
+                    name="min_confidence"
+                    onChange="document.getElementById('min_confidence_value').innerHTML = this.value"
                 />
 	            <label id="min_confidence_value">0.05</label>
+                <br/>
+	            <label>Use Vision AI: </label>
+                <input 
+                    type="checkbox" checked
+                    name="use_vision_ai"
+                />
+                <br/>
                 <input type="submit" name="Classify" value="Classify"/>
             </form>
         </td>

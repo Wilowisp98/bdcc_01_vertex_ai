@@ -1,0 +1,38 @@
+{% extends 'general-template.html'  %}
+{% block content %}
+
+<body>
+
+<h1>Image Info</h1>
+
+
+<h2>{{ image_id }}</h2>
+        <ul>
+            <li><b>Size (kb): </b> {{ size_kb }}</li>
+            <li><b>Classes (Labels): </b>
+                <ul>
+                    {% for desc in labels %}
+                        <li> <a href="/image_search?description={{ desc.Description }}">{{ desc.Description }}</a> ({{ desc.label }}) </li>
+                    {% endfor %}
+                </ul>
+            </li>
+            <li><b>Relations: </b>
+                <ul>{% for relation in relations %}
+                        <li> 
+                            <a href="/relation_search?class1={{ relation.Description }}&relation={{ relation.relation }}&class2={{ relation.rel_description }}&image_limit=10&page_number=1"">
+                                {{ relation.Description }} {{ relation.relation }} {{ relation.rel_description }}</a> ({{ relation.rel_label }})
+                        </li>
+                {% endfor %}</ul>
+            </li>
+        </ul>
+        <a href="https://storage.googleapis.com/bdcc_open_images_dataset/images/{{ image_id }}.jpg"> 
+            <img width="600" src="https://storage.googleapis.com/bdcc_open_images_dataset/images/{{ image_id }}.jpg"/>
+        </a>
+
+<br/>
+
+</body>
+
+{% endblock %}
+
+

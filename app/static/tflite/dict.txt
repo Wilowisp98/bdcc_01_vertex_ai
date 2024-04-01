@@ -1,10 +1,10 @@
-Lion
-Bull
-Frog
-Chicken
-Elephant
-Duck
-Dolphin
-Tortoise
-Butterfly
-Monkey
+Flower
+Dog
+Footwear
+Car
+Human eye
+Airplane
+Tree
+Bird
+Furniture
+Mammal

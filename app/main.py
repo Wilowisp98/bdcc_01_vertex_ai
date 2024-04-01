@@ -5,8 +5,11 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 import flask
 import logging
+import requests
 import os
 import tfmodel
+
+import cloud_vision
 from google.cloud import bigquery
 from google.cloud import storage
 
@@ -63,7 +66,7 @@ def classes():
         FROM `{project_id}.vertex_dataset.image_labels`
         JOIN `{project_id}.vertex_dataset.classes` USING(Label)
         GROUP BY Description
-        ORDER BY NumImages DESC
+        ORDER BY Description ASC
     '''
     results_df = run_query(query)
     return flask.render_template('classes.html', results=to_flask_render_template(results_df))
@@ -84,24 +87,48 @@ def relations():
 @app.route('/image_info')
 def image_info():
     image_id = flask.request.args.get('image_id')
-    # TODO
-    return flask.render_template('not_implemented.html')
+    img_url = f'https://storage.googleapis.com/bdcc_open_images_dataset/images/{image_id}.jpg'
+    img_bytes = requests.get(img_url).content
+    size_kb = round(len(img_bytes) / 1024)
+    image_info = '''
+        SELECT 
+            img.ImageId,
+            c1.Description,
+            img.label,
+            rel.relation,
+            c2.label as rel_label,
+            c2.description as rel_description 
+        FROM `project01-418209.vertex_dataset.image_labels` img
+        INNER JOIN `project01-418209.vertex_dataset.classes` c1 USING (label)
+        LEFT JOIN `project01-418209.vertex_dataset.relations` rel
+            ON rel.ImageId = img.ImageId
+            AND img.label = rel.Label1
+        LEFT JOIN `project01-418209.vertex_dataset.classes` c2
+            ON c2.label = rel.label2
+        WHERE img.ImageId = '{}'
+    '''.format(image_id)
+    image_info = run_query(image_info)
+
+    labels = image_info[['label', 'Description']].drop_duplicates().to_dict(orient='records')
+    relations = image_info[['Description', 'relation', 'rel_label', 'rel_description']].drop_duplicates().dropna().to_dict(orient='records')
+    return flask.render_template('image_info.html', image_id=image_id, size_kb=size_kb, labels=labels, relations=relations)
 
 
 @app.route('/image_search')
 def image_search():
     description = flask.request.args.get('description', default='')
     image_limit = flask.request.args.get('image_limit', default=10, type=int)
+    page_num = flask.request.args.get('page', default=1, type=int)
     results_df = run_query(
         '''
         Select ImageId
         FROM `{project_id}.vertex_dataset.image_labels`
         INNER JOIN `{project_id}.vertex_dataset.classes` USING (Label)
         WHERE LOWER(description) LIKE '%{desc}%'
-        LIMIT {image_limit}
-        '''.format(project_id=PROJECT, desc=description.lower(), image_limit=image_limit)
+        LIMIT {image_limit} OFFSET {offset}
+        '''.format(project_id=PROJECT, desc=description.lower(), image_limit=image_limit, offset=(page_num-1) * image_limit)
     )
-    return flask.render_template('image_search.html', description=description, results=results_df['ImageId'].to_list())
+    return flask.render_template('image_search.html', description=description, results=results_df['ImageId'].to_list(), prev_page=max(page_num-1, 1), next_page=page_num+1, image_limit=image_limit)
 
 
 @app.route('/relation_search')
@@ -110,6 +137,7 @@ def relation_search():
     relation = flask.request.args.get('relation', default='%')
     class2 = flask.request.args.get('class2', default='%')
     image_limit = flask.request.args.get('image_limit', default=10, type=int)
+    page_num = flask.request.args.get('page', default=1, type=int)
 
     results_df = run_query(
         '''
@@ -120,10 +148,10 @@ def relation_search():
         WHERE LOWER(relation) LIKE '%{relation}%'
             AND LOWER(c1.description) LIKE '%{class1}%'
             AND LOWER(c2.description) LIKE '%{class2}%'
-        LIMIT {image_limit}
-        '''.format(project_id=PROJECT, relation=relation.lower(), image_limit=image_limit, class1=class1.lower(), class2=class2.lower())
+        LIMIT {image_limit} OFFSET {offset}
+        '''.format(project_id=PROJECT, relation=relation.lower(), image_limit=image_limit, class1=class1.lower(), class2=class2.lower(), offset=(page_num-1) * image_limit)
     )
-    return flask.render_template('relation_search.html', class1=class1, relation=relation, class2=class2, results=to_flask_render_template(results_df))
+    return flask.render_template('relation_search.html', class1=class1, relation=relation, class2=class2, results=to_flask_render_template(results_df), prev_page=max(page_num-1, 1), next_page=page_num+1, image_limit=image_limit)
 
 
 @app.route('/image_classify_classes')
@@ -136,13 +164,20 @@ def image_classify_classes():
 def image_classify():
     files = flask.request.files.getlist('files')
     min_confidence = flask.request.form.get('min_confidence', default=0.25, type=float)
+    use_vision_ai = flask.request.form.get('use_vision_ai') is not None
+    print('SECTION_WITH_IMAGE_CLASSIFY - VISIONAI VAL: ', use_vision_ai)
     results = []
     if len(files) > 1 or files[0].filename != '':
         for file in files:
-            classifications = TF_CLASSIFIER.classify(file, min_confidence)
             blob = storage.Blob(file.filename, APP_BUCKET)
             blob.upload_from_file(file, blob, content_type=file.mimetype)
             blob.make_public()
+            
+            if not use_vision_ai:
+                classifications = TF_CLASSIFIER.classify(file, min_confidence)
+            else: 
+                logging.info(f'image_classify: USING VISION_AI\n{blob.public_url = }')
+                classifications = cloud_vision.classify_img(blob.public_url)
             logging.info('image_classify: filename={} blob={} classifications={}'\
                 .format(file.filename,blob.name,classifications))
             results.append(dict(bucket=APP_BUCKET,

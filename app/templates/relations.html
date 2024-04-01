@@ -12,9 +12,10 @@
     </tr>
     {% for result in results %}
     
-        <tr><td><a href="/relation_search??class1=%25&relation={{ result[0] }}&class2=%25&image_limit=10"">{{ result[0] }}</a></td>
+        <tr><td><a href="/relation_search?class1=%25&relation={{ result[0] }}&class2=%25&image_limit=10"">{{ result[0] }}</a></td>
         <td>{{ result[1] }}</td></tr>
     {% endfor %}
 </table>
 
+</body>
 {% endblock %}

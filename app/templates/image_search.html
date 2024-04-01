@@ -4,6 +4,11 @@
 <body>
 
 <h1>{{ description }}</h1>
+<div>
+        <a href="?description={{ description }}&image_limit={{ image_limit }}&page={{ prev_page }}">Previous Page</a>
+        
+        <a href="?description={{ description }}&image_limit={{ image_limit }}&page={{ next_page }}">Next Page</a>
+</div>
 
 {% for result in results %}
 
@@ -16,6 +21,8 @@
         <br/>
 
 {% endfor %}
+
+</body>
 
 {% endblock %}
 

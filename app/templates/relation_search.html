@@ -3,11 +3,17 @@
 
 <body>
 <h1>{% if class1|length > 1 %}{{ class1 }} {% endif %}<b>{{ relation }}</b>{% if class2|length > 1 %} {{ class2 }}{% endif %}</h1>
+<div>
+        <a href="?class1={{ class1 }}&relation={{ relation }}&class2={{ class2 }}&image_limit={{ image_limit }}&page={{ prev_page }}">Previous Page</a>
+        
+        <a href="?class1={{ class1 }}&relation={{ relation }}&class2={{ class2 }}&image_limit={{ image_limit }}&page={{ next_page }}">Next Page</a>
+</div>
 
 {% for result in results %}
 
         <h2>{{ result[0] }}</h2>
-        <h4>{{ result[1] }} {{ result[2] }} {{ result[3] }}</h4>
+        <h4><a href="/relation_search?class1={{ result[1] }}&relation={{ result[2] }}&class2={{ result[3] }}&image_limit={{ image_limit }}&page=1"">
+                {{ result[1] }} {{ result[2] }} {{ result[3] }}</a></h4>
 
                 <a href="https://storage.googleapis.com/bdcc_open_images_dataset/images/{{ result[0] }}.jpg">
                         <img width="600" src="https://storage.googleapis.com/bdcc_open_images_dataset/images/{{ result[0] }}.jpg"/>
@@ -16,7 +22,7 @@
         <br/>
 
 {% endfor %}
-
+</body>
 {% endblock %}
 
 
