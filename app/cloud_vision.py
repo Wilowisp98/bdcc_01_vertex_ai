@@ -1,5 +1,4 @@
 import os
-import requests
 from google.cloud import vision
 
 PROJECT = os.environ.get('GOOGLE_CLOUD_PROJECT', 'project01-418209')
@@ -12,7 +11,7 @@ client_vision = vision.ImageAnnotatorClient()
 
 
 
-def classify_img(img_url):
+def classify_img(img_url, min_confidence=0.9):
     """Detects labels in a image url."""
     # Upload image onto vision
     image = vision.Image()
@@ -24,11 +23,12 @@ def classify_img(img_url):
 
     output = []
     for label in labels:
-        output.append({
-            'label': label.description,
-            'confidence': label.score
-            }
-        )
+        if label.score >= min_confidence:
+            output.append({
+                'label': label.description,
+                'confidence': label.score
+                }
+            )
     if response.error.message:
         raise Exception(
             "{}\nFor more info on error messages, check: "

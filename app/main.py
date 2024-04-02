@@ -130,6 +130,22 @@ def image_search():
     )
     return flask.render_template('image_search.html', description=description, results=results_df['ImageId'].to_list(), prev_page=max(page_num-1, 1), next_page=page_num+1, image_limit=image_limit)
 
+@app.route('/image_search_multiple')
+def image_search_multiple():
+    description = "','".join(flask.request.args.get('descriptions', default='').split(','))
+    image_limit = flask.request.args.get('image_limit', default=10, type=int)
+    page_num = flask.request.args.get('page', default=1, type=int)
+    results_df = run_query(
+        '''
+        Select ImageId, Description
+        FROM `{project_id}.vertex_dataset.image_labels`
+        INNER JOIN `{project_id}.vertex_dataset.classes` USING (Label)
+        WHERE LOWER(description) IN ('{desc}')
+        LIMIT {image_limit} OFFSET {offset}
+        '''.format(project_id=PROJECT, desc=description.lower(), image_limit=image_limit, offset=(page_num-1) * image_limit)
+    )
+    return flask.render_template('image_search_multiple.html', description=description.replace("'", ''), results=results_df.to_dict(orient='records'), prev_page=max(page_num-1, 1), next_page=page_num+1, image_limit=image_limit)
+
 
 @app.route('/relation_search')
 def relation_search():
