@@ -1,6 +1,7 @@
 google-cloud-bigquery
 google-cloud-storage
 google-cloud-vision
+google-cloud-firestore
 Flask
 tensorflow==2.16.1
 Pillow==9.1.0

@@ -12,6 +12,7 @@ import tfmodel
 import cloud_vision
 from google.cloud import bigquery
 from google.cloud import storage
+from google.cloud import firestore
 
 # Set up logging
 logging.basicConfig(
@@ -20,6 +21,7 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
+FIRESTORE_DB = firestore.Client(project='project01-418209')
 PROJECT = os.environ.get('GOOGLE_CLOUD_PROJECT', 'project01-418209') 
 logging.info('Google Cloud project is {}'.format(PROJECT))
 
@@ -45,7 +47,6 @@ logging.info('Initialisation complete')
 def run_query(query: str):
     query = query.format(project_id=PROJECT) if '{project_id}' in query else query
     results = BQ_CLIENT.query(query).result()
-    logging.info('classes: results={}'.format(results.total_rows))
     df = results.to_dataframe()
     df.reset_index(inplace=True, drop=True)
     return df
@@ -191,11 +192,16 @@ def image_classify():
             
             if not use_vision_ai:
                 classifications = TF_CLASSIFIER.classify(file, min_confidence)
+                for i in classifications:
+                    name = file.filename.split('.')[0]
+                    doc_ref = FIRESTORE_DB.collection("vertex_ai").document(f"{name}")
+                    doc_ref.set({"image_id": name, "label": i["label"], "confidence": i["confidence"]})
             else: 
                 logging.info(f'image_classify: USING VISION_AI\n{blob.public_url = }')
                 classifications = cloud_vision.classify_img(blob.public_url)
             logging.info('image_classify: filename={} blob={} classifications={}'\
                 .format(file.filename,blob.name,classifications))
+            
             results.append(dict(bucket=APP_BUCKET,
                                 filename=file.filename,
                                 classifications=classifications))
@@ -203,9 +209,20 @@ def image_classify():
     data = dict(bucket_name=APP_BUCKET.name, 
                 min_confidence=min_confidence, 
                 results=results)
+    
+
     return flask.render_template('image_classify.html', data=data)
 
+APP_BUCKET.name
+@app.route('/classification_results')
+def classification_results():
+    docs = FIRESTORE_DB.collection('vertex_ai').get()
+    results = []
+    for doc in docs:
+        result_doc = doc.to_dict()
+        results.append(result_doc)
 
+    return flask.render_template('classification_results.html', data=results, bucket_name=APP_BUCKET.name)
 
 if __name__ == '__main__':
     # When invoked as a program.
