@@ -1,7 +1,7 @@
 {% extends 'general-template.html'  %}
 {% block content %}
 
-<h1>Classification results from Vertex AI</h1>
+<h1>Classification results from TF Lite Model</h1>
 
 <table>
     <tr>
@@ -12,8 +12,8 @@
     {% for result in data.results %}
     <tr>
         <td>
-            <a href="https://storage.googleapis.com/{{ data.bucket_name }}/{{ result.filename }}">
-                {{ result.filename }}
+            <a href="https://storage.googleapis.com/{{ data.bucket_name }}/{{ result.image_id }}">
+                {{ result.image_id }}
             </a>
         </td>
         <td>
@@ -25,7 +25,7 @@
                 {% for classification in result.classifications %}
                 <tr>
                     <td>
-                        <a href="/image_search?description={{ classification.label }}">{{ classification.label }}</a>
+                        <a href="/image_search?description={{ classification.label }}">{{ classification.label }}</a>
                     </td>
                     <td>
                         {{ classification.confidence }}
@@ -35,8 +35,8 @@
             </table>
         </td>
         <td>
-            <a href="https://storage.googleapis.com/{{ data.bucket_name }}/{{ result.filename }}">
-                <img src="https://storage.googleapis.com/{{ data.bucket_name }}/{{ result.filename }}" width="300" />
+            <a href="https://storage.googleapis.com/{{ data.bucket_name }}/{{ result.image_id }}">
+                <img src="https://storage.googleapis.com/{{ data.bucket_name }}/{{ result.image_id }}" width="300" />
             </a>
         </td>
     </tr>

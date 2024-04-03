@@ -192,10 +192,8 @@ def image_classify():
             
             if not use_vision_ai:
                 classifications = TF_CLASSIFIER.classify(file, min_confidence)
-                for i in classifications:
-                    name = file.filename.split('.')[0]
-                    doc_ref = FIRESTORE_DB.collection("vertex_ai").document(f"{name}")
-                    doc_ref.set({"image_id": name, "label": i["label"], "confidence": i["confidence"]})
+                doc_ref = FIRESTORE_DB.collection("vertex_ai").document(f"{file.filename}")
+                doc_ref.set({'image_id': file.filename, 'classifications': classifications})
             else: 
                 logging.info(f'image_classify: USING VISION_AI\n{blob.public_url = }')
                 classifications = cloud_vision.classify_img(blob.public_url)
@@ -210,10 +208,8 @@ def image_classify():
                 min_confidence=min_confidence, 
                 results=results)
     
-
     return flask.render_template('image_classify.html', data=data)
 
-APP_BUCKET.name
 @app.route('/classification_results')
 def classification_results():
     docs = FIRESTORE_DB.collection('vertex_ai').get()
@@ -222,7 +218,7 @@ def classification_results():
         result_doc = doc.to_dict()
         results.append(result_doc)
 
-    return flask.render_template('classification_results.html', data=results, bucket_name=APP_BUCKET.name)
+    return flask.render_template('classification_results.html', data={"results": results, "bucket_name": APP_BUCKET.name})
 
 if __name__ == '__main__':
     # When invoked as a program.
