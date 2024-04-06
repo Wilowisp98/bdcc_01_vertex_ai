@@ -3,3 +3,4 @@ Pillow
 flask<3.0,>=1.0
 tensorflow
 numpy
+google-cloud-storage

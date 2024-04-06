@@ -4,15 +4,24 @@ from io import BytesIO
 import flask
 import tensorflow as tf
 import numpy as np
-
-app = flask.Flask(name)
+import os
+from google.cloud import storage
 
 class Model:
+    def _init_(self, model_file, dict_file):
+        client = storage.Client()
+        bucket = client.bucket('project01-418209.appspot.com')
 
-    def init(self, model_file, dict_file):
-        with open(dict_file, 'r') as f:
-            self.labels = [line.strip().replace('_', ' ') for line in f.readlines()]
-        self.interpreter = tf.lite.Interpreter(model_path=model_file)
+        # Download the model file
+        blob = storage.Blob(model_file, bucket)
+        model = blob.download_as_bytes()
+
+        # Download the dictionary file
+        blob = storage.Blob(dict_file, bucket)
+        dict_content = blob.download_as_text()
+
+        self.labels = [line.strip().replace('_', ' ') for line in dict_content.splitlines()]
+        self.interpreter = tf.lite.Interpreter(model_content=model)
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
@@ -43,16 +52,18 @@ class Model:
         
 
 TF_CLASSIFIER = Model(
-    app.root_path + "/static/tflite/model.tflite",
-    app.root_path + "/static/tflite/dict.txt"
+    'model.tflite',
+    'dict.txt'
 )
 
-@app.route('/classify', methods=['POST'])
-def classify_image():
+def classify_image(request):
     min_confidence = 0.25
 
-    data = flask.request.get_json()
-    image_url = data['image_url']
+    # Get the image URL from the 'url' parameter
+    image_url = request.args.get('url')
+    if image_url is None:
+        return flask.jsonify({'error': 'No image URL provided'}), 400
+
     response = requests.get(image_url)
     image = Image.open(BytesIO(response.content))
 

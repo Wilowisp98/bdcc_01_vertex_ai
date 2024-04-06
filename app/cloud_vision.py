@@ -8,9 +8,6 @@ os.environ['GOOGLE_CLOUD_QUOTA_PROJECT'] = PROJECT
 
 client_vision = vision.ImageAnnotatorClient()
 
-
-
-
 def classify_img(img_url, min_confidence=0.9):
     """Detects labels in a image url."""
     # Upload image onto vision

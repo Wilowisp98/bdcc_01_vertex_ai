@@ -41,6 +41,7 @@ TF_CLASSIFIER = tfmodel.Model(
     app.root_path + "/static/tflite/model.tflite",
     app.root_path + "/static/tflite/dict.txt"
 )
+
 logging.info('Initialisation complete')
 
 # Run queries and return the result as a dataframe
