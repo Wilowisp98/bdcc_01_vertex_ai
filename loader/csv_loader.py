@@ -34,16 +34,7 @@ def create_bq(files, dataset_name='vertex_dataset'):
     # Iterating over the files and creating the respective tables
     for file, file_path in files.items():
         table_ref = vertex_dataset.table(file)
-
-        # Bellow section not necessary, since we delete the dataset if it exists
-        ## Deleting the table if it already exists (not needed bc the dataset is deleted, but might be an improvement)
-        #try:
-        #    client.get_table(table_ref)
-        #    print(f"Table {file} already exists, deleting it first...")
-        #    client.delete_table(file, not_found_ok=True)
-        #except NotFound:
-        #    pass
-
+        
         # Read file
         df = pd.read_csv(file_path)
         columns = list(df.columns)
@@ -59,14 +50,8 @@ def create_bq(files, dataset_name='vertex_dataset'):
         job = client.load_table_from_dataframe(df, table_ref, job_config=job_config)
         job.result()
         print(f"Table {file} created successfully")
-        # Debug 
-        #results = client.query(f'SELECT * FROM {table_ref.dataset_id}.{table_ref.table_id} LIMIT 10').result()
-        #df = results.to_dataframe()
-        #df = df.drop(index=0)
-        #df.reset_index(inplace=True, drop=True)
-        #print(df)
 
-def main():
+def main_csv_loader():
     # files = get_files()
     files_to_upload_to_bq = [
         'https://storage.googleapis.com/bdcc_open_images_dataset/data/classes.csv',
@@ -78,5 +63,5 @@ def main():
     }
     create_bq(files_to_upload_to_bq)
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+#    main()

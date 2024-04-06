@@ -8,11 +8,12 @@ import logging
 import requests
 import os
 import tfmodel
-
 import cloud_vision
 from google.cloud import bigquery
 from google.cloud import storage
 from google.cloud import firestore
+from loader.csv_loader import main_csv_loader
+from loader.vertex_ai_images_loader import main_vertex_loader
 
 # Set up logging
 logging.basicConfig(
@@ -222,6 +223,15 @@ def classification_results():
     return flask.render_template('classification_results.html', data={"results": results, "bucket_name": APP_BUCKET.name})
 
 if __name__ == '__main__':
-    # When invoked as a program.
+    
     logging.info('Starting app')
+
+    logging.info('Loading CSVs...')
+    main_csv_loader()
+    logging.info('CSVs loaded')
+
+    logging.info('Loading model...')
+    main_vertex_loader()
+    logging.info('Model loaded')
+
     app.run(host='127.0.0.1', port=8080, debug=True)

@@ -80,7 +80,7 @@ def generate_csv(imgs_df):
     return '\n'.join(csv)
 
 
-def main():
+def main_vertex_loader():
     # Defining descriptions to upload data onto BLOB and use the VertexAI tool with
     descs = [
         'Airplane', 
@@ -117,8 +117,5 @@ def main():
 
     upload_file_to_storage_bucket(file, 'imgs_metadata.csv', APP_BUCKET, content_type='csv')
 
-
-
-
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+#    main()
