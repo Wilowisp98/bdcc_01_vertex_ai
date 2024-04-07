@@ -1,0 +1,16 @@
+# previously moved to the parent folder cd /foo/bdcc_01_vertex_ai
+docker build -t project01-app -f app/Dockerfile .
+
+# Had to download GCloud CLI
+# Artifacts was already instaled on cloud from building the URL
+# Enable Cloud Deploy API
+
+gcloud artifacts repositories create project01-docker --repository-format=docker --location=europe-west1 --description="Docker repo"
+
+gcloud auth configure-docker europe-west1-docker.pkg.dev 
+
+docker tag 11ec56043c33 europe-west1-docker.pkg.dev/project01-418209/project01-docker/app-image:tag1
+
+docker push europe-west1-docker.pkg.dev/project01-418209/project01-docker/app-image:tag1
+
+gcloud run deploy --image=europe-west1-docker.pkg.dev/project01-418209/project01-docker/app-image:tag1 --memory 2G

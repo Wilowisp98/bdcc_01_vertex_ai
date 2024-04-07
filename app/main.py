@@ -14,6 +14,7 @@ from google.cloud import storage
 from google.cloud import firestore
 from loader.csv_loader import main_csv_loader
 from loader.vertex_ai_images_loader import main_vertex_loader
+from loader.tf_model_loader import main_model_loader
 
 # Set up logging
 logging.basicConfig(
@@ -230,8 +231,12 @@ if __name__ == '__main__':
     main_csv_loader()
     logging.info('CSVs loaded')
 
-    logging.info('Loading model...')
+    logging.info('Loading images...')
     main_vertex_loader()
-    logging.info('Model loaded')
+    logging.info('Images loaded')
 
+    logging.info('Loading images...')
+    main_model_loader()
+    logging.info('Images loaded')
+    
     app.run(host='127.0.0.1', port=8080, debug=True)

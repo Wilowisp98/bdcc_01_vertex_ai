@@ -26,7 +26,7 @@ def upload_file_to_storage_bucket(file_path, fname, **kwargs):
     blob.make_public()
     return True
 
-def main():
+def main_model_loader():
     # files = get_files()
     files_to_upload = [
         '../app/static/tflite/dict.txt',
@@ -38,5 +38,5 @@ def main():
     logging.info('Model configs uploaded to storage bucket {}'.format(BUCKET_NAME))
     return True
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+#    main()
